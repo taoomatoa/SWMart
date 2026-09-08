@@ -3,23 +3,109 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SW Mart - Catatan Keuangan</title>
+  <title>Pencatat Keuangan</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-    }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
+    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+    h2 { text-align: center; color: #333; margin-bottom: 20px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+    button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    button:hover { background-color: #218838; }
+    #status { margin-top: 15px; text-align: center; font-weight: bold; }
   </style>
 </head>
 <body>
-  <!-- Ganti src dengan URL Web App Google Apps Script Anda -->
-  <iframe src="https://script.google.com/macros/s/AKfycbxutnb4EKS8cX7qDlFyP4G31YxsVFYqLAwIyuLDakb0Zz0cBuYu7AZht_mdMGjZ_Hrr/exec?authuser=0"></iframe>
+
+<div class="card">
+  <h2>Catat Keuangan</h2>
+  <form id="financeForm">
+    <div class="form-group">
+      <label>Tanggal</label>
+      <input type="date" id="tanggal" required>
+    </div>
+    
+    <div class="form-group">
+      <label>Jenis</label>
+      <select id="jenis" required>
+        <option value="Pengeluaran">Pengeluaran</option>
+        <option value="Pemasukan">Pemasukan</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Kategori</label>
+      <input type="text" id="kategori" placeholder="Contoh: Makanan, Transport, Gaji" required>
+    </div>
+
+    <div class="form-group">
+      <label>Nominal (Rp)</label>
+      <input type="number" id="nominal" placeholder="0" required>
+    </div>
+
+    <div class="form-group">
+      <label>Keterangan</label>
+      <input type="text" id="keterangan" placeholder="Opsional">
+    </div>
+
+    <button type="submit" id="btnSubmit">Simpan Transaksi</button>
+  </form>
+  <div id="status"></div>
+</div>
+
+<script>
+  // Ganti dengan URL Web App Google Apps Script kamu
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-ZaX6vR9aDi3Noafz61SRzyF4OKqiXWQnP5vC1H4P_J2mH-rmpcrr9f9ILGLuIv8/exec";
+
+  // Set default tanggal hari ini
+  document.getElementById('tanggal').valueAsDate = new Date();
+
+  document.getElementById('financeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const btn = document.getElementById('btnSubmit');
+    const statusDiv = document.getElementById('status');
+    
+    btn.disabled = true;
+    btn.innerText = "Lagi menyimpan...";
+    statusDiv.innerText = "";
+
+    const payload = {
+      tanggal: document.getElementById('tanggal').value,
+      jenis: document.getElementById('jenis').value,
+      kategori: document.getElementById('kategori').value,
+      nominal: document.getElementById('nominal').value,
+      keterangan: document.getElementById('keterangan').value
+    };
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(data.status === "success") {
+        statusDiv.style.color = "green";
+        statusDiv.innerText = "Data Berhasil Disimpan!";
+        document.getElementById('financeForm').reset();
+        document.getElementById('tanggal').valueAsDate = new Date();
+      } else {
+        statusDiv.style.color = "red";
+        statusDiv.innerText = "Gagal: " + data.message;
+      }
+    })
+    .catch(err => {
+      statusDiv.style.color = "red";
+      statusDiv.innerText = "Terjadi kesalahan koneksi!";
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.innerText = "Simpan Transaksi";
+    });
+  });
+</script>
+
 </body>
 </html>
