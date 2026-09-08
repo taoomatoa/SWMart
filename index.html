@@ -101,8 +101,67 @@
         </div>
       </div>
     </div>
-    
-    <!-- 1. KARTU RINGKASAN STATISTIK -->
+
+    <!-- KARTU SALDO AKUMULASI (Ukuran Besar & Jelas) -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm border-0 bg-primary text-white p-4 rounded-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span class="text-white-50 fw-semibold text-uppercase tracking-wider fs-6">
+                  <i class="fa-solid fa-wallet me-2"></i>Total Saldo Akumulasi
+                </span>
+                <h1 id="totalSaldo" class="display-4 fw-bold mb-0 mt-1">Rp 0</h1>
+              </div>
+              <div class="bg-white bg-opacity-25 p-3 rounded-circle d-none d-sm-block">
+                <i class="fa-solid fa-scale-balanced fa-2x text-white"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 3. GRAFIK & TABEL RIWAYAT TRANSAKSI -->
+      <div class="col-lg-8">
+        
+        <!-- Grafik Visualisasi -->
+        <div class="card chart-card shadow-sm p-3 bg-white mb-4">
+          <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Ringkasan Grafik Periode</h5>
+          <div style="height: 220px;">
+            <canvas id="financeChart"></canvas>
+          </div>
+        </div>
+      
+        <!-- Tabel Transaksi Terakhir -->
+        <div class="card table-card shadow-sm p-3 bg-white">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Riwayat Transaksi (5 Terakhir)</h5>
+            <span id="transCount" class="badge bg-light text-dark border">0 Transaksi</span>
+          </div>
+      
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Jenis</th>
+                  <th>Kategori</th>
+                  <th>Nominal</th>
+                  <th>Keterangan</th>
+                  <th class="text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="transactionTableBody">
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-3">Memuat data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+        <!-- 1. KARTU RINGKASAN STATISTIK -->
     <div class="row g-3 mb-4">
       <!-- Total Saldo -->
       <div class="col-md-4">
@@ -198,64 +257,7 @@
         </div>
       </div>
 
-      <!-- KARTU SALDO AKUMULASI (Ukuran Besar & Jelas) -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <div class="card shadow-sm border-0 bg-primary text-white p-4 rounded-3">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <span class="text-white-50 fw-semibold text-uppercase tracking-wider fs-6">
-                  <i class="fa-solid fa-wallet me-2"></i>Total Saldo Akumulasi
-                </span>
-                <h1 id="totalSaldo" class="display-4 fw-bold mb-0 mt-1">Rp 0</h1>
-              </div>
-              <div class="bg-white bg-opacity-25 p-3 rounded-circle d-none d-sm-block">
-                <i class="fa-solid fa-scale-balanced fa-2x text-white"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
       
-      <!-- 3. GRAFIK & TABEL RIWAYAT TRANSAKSI -->
-      <div class="col-lg-8">
-        
-        <!-- Grafik Visualisasi -->
-        <div class="card chart-card shadow-sm p-3 bg-white mb-4">
-          <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Ringkasan Grafik Periode</h5>
-          <div style="height: 220px;">
-            <canvas id="financeChart"></canvas>
-          </div>
-        </div>
-      
-        <!-- Tabel Transaksi Terakhir -->
-        <div class="card table-card shadow-sm p-3 bg-white">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Riwayat Transaksi (5 Terakhir)</h5>
-            <span id="transCount" class="badge bg-light text-dark border">0 Transaksi</span>
-          </div>
-      
-          <div class="table-responsive">
-            <table class="table table-hover align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>Tanggal</th>
-                  <th>Jenis</th>
-                  <th>Kategori</th>
-                  <th>Nominal</th>
-                  <th>Keterangan</th>
-                  <th class="text-center">Aksi</th>
-                </tr>
-              </thead>
-              <tbody id="transactionTableBody">
-                <tr>
-                  <td colspan="6" class="text-center text-muted py-3">Memuat data...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
 
   <!-- JavaScript Logika -->
   <script>
