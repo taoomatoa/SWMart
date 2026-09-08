@@ -34,7 +34,7 @@
       justify-content: center;
       font-size: 1.3rem;
     }
-    .table-card, .chart-card, .form-card {
+    .table-card, .chart-card, .form-card, .filter-card {
       border: none;
       border-radius: 12px;
     }
@@ -60,6 +60,47 @@
   </nav>
 
   <div class="container mb-5">
+
+    <!-- BAR FILTER BULAN & TAHUN -->
+    <div class="card filter-card shadow-sm p-3 bg-white mb-4">
+      <div class="row align-items-center g-2">
+        <div class="col-md-3">
+          <h6 class="fw-bold mb-0 text-dark">
+            <i class="fa-solid fa-filter text-primary me-2"></i>Filter Periode:
+          </h6>
+        </div>
+        <div class="col-md-3">
+          <select id="filterBulan" class="form-select form-select-sm" onchange="applyFilter()">
+            <option value="ALL">Semua Bulan</option>
+            <option value="01">Januari</option>
+            <option value="02">Februari</option>
+            <option value="03">Maret</option>
+            <option value="04">April</option>
+            <option value="05">Mei</option>
+            <option value="06">Juni</option>
+            <option value="07">Juli</option>
+            <option value="08">Agustus</option>
+            <option value="09">September</option>
+            <option value="10">Oktober</option>
+            <option value="11">November</option>
+            <option value="12">Desember</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select id="filterTahun" class="form-select form-select-sm" onchange="applyFilter()">
+            <!-- Pilihan tahun diisi otomatis lewat JS -->
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+          <button class="btn btn-sm btn-outline-primary w-100" onclick="resetFilter()">
+            <i class="fa-solid fa-rotate-left me-1"></i> Reset / Semua
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="loadData()" title="Segarkan Data">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
     
     <!-- 1. KARTU RINGKASAN STATISTIK -->
     <div class="row g-3 mb-4">
@@ -68,7 +109,7 @@
         <div class="card card-stat shadow-sm p-3 bg-white">
           <div class="d-flex align-items-center justify-content-between">
             <div>
-              <span class="text-muted small fw-semibold">TOTAL SALDO</span>
+              <span class="text-muted small fw-semibold">SALDO PERIODE INI</span>
               <h3 class="fw-bold mt-1 mb-0 text-dark" id="txtTotalSaldo">Rp 0</h3>
             </div>
             <div class="stat-icon bg-primary bg-opacity-10 text-primary">
@@ -130,11 +171,11 @@
               </select>
             </div>
 
-            <!-- Kategori Dinamis (Pilihan) -->
+            <!-- Kategori Dinamis -->
             <div class="mb-3">
               <label class="form-label small fw-bold">Kategori</label>
               <select id="kategori" class="form-select" required>
-                <!-- Opsi diisi otomatis via JS -->
+                <!-- Opsi diisi via JS -->
               </select>
             </div>
 
@@ -162,7 +203,7 @@
         
         <!-- Grafik Visualisasi -->
         <div class="card chart-card shadow-sm p-3 bg-white mb-4">
-          <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Ringkasan Keuangan</h5>
+          <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Ringkasan Grafik Periode</h5>
           <div style="height: 220px;">
             <canvas id="financeChart"></canvas>
           </div>
@@ -172,7 +213,7 @@
         <div class="card table-card shadow-sm p-3 bg-white">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Riwayat Transaksi</h5>
-            <button class="btn btn-sm btn-outline-secondary" onclick="loadData()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+            <span id="transCount" class="badge bg-light text-dark border">0 Transaksi</span>
           </div>
 
           <div class="table-responsive">
@@ -206,6 +247,9 @@
     // Ganti dengan URL Deploy Web App Google Apps Script kamu
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwvsgPcUzeWmtD8CvukRfz8hLmIoCtdL5P4nv6IlKQNp79O414J0P2jcjva-lNfK_E/exec";
 
+    // Global variable untuk menyimpan seluruh data mentah dari Sheets
+    let allTransactions = [];
+
     // Daftar Kategori berdasarkan Jenis
     const categoriesList = {
       Pengeluaran: [
@@ -236,26 +280,37 @@
         "Transportasi",
         "Sales Rokok",
         "Lain-Lain"
-       
       ],
       Pemasukan: [
         "Penjualan Harian",
         "Kasbon Anggota",
         "Pembayaran Harian",
-        "Penjualan",
       ]
     };
 
     let chartInstance = null;
 
-    // Set tanggal default ke hari ini & muat opsi kategori
-    document.getElementById('tanggal').valueAsDate = new Date();
-
     document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById('tanggal').valueAsDate = new Date();
+      setupYearOptions();
       updateCategoryOptions();
       initChart();
       loadData();
     });
+
+    // Menyiapkan Pilihan Tahun Dinamis (3 tahun ke belakang sampai 1 tahun ke depan)
+    function setupYearOptions() {
+      const yearSelect = document.getElementById('filterTahun');
+      const currentYear = new Date().getFullYear();
+      yearSelect.innerHTML = '<option value="ALL">Semua Tahun</option>';
+
+      for (let y = currentYear + 1; y >= currentYear - 3; y--) {
+        const opt = document.createElement('option');
+        opt.value = y.toString();
+        opt.innerText = y.toString();
+        yearSelect.appendChild(opt);
+      }
+    }
 
     // Mengubah Opsi Dropdown Kategori secara Dinamis
     function updateCategoryOptions() {
@@ -300,36 +355,77 @@
       });
     }
 
-    // Mengambil Data dari Google Sheets via GAS
+    // Mengambil Data dari Google Sheets
     function loadData() {
       fetch(SCRIPT_URL + "?action=read")
         .then(res => res.json())
         .then(data => {
           if (data.status === "success") {
-            renderDashboard(data.data);
+            allTransactions = data.data;
+            applyFilter(); // Tampilkan data awal (sesuai filter aktif)
           }
         })
         .catch(err => console.error("Gagal mengambil data:", err));
     }
 
+    // Memfilter Data berdasarkan Bulan dan Tahun yang Dipilih
+    function applyFilter() {
+      const selectedMonth = document.getElementById('filterBulan').value;
+      const selectedYear = document.getElementById('filterTahun').value;
+
+      const filtered = allTransactions.filter(item => {
+        if (!item.tanggal) return false;
+
+        // Tanggal dalam format YYYY-MM-DD
+        const parts = item.tanggal.split('-');
+        const itemYear = parts[0];
+        const itemMonth = parts[1];
+
+        const matchMonth = (selectedMonth === 'ALL' || itemMonth === selectedMonth);
+        const matchYear = (selectedYear === 'ALL' || itemYear === selectedYear);
+
+        return matchMonth && matchYear;
+      });
+
+      renderDashboard(filtered);
+    }
+
+    // Reset Filter ke "Semua Bulan & Tahun"
+    function resetFilter() {
+      document.getElementById('filterBulan').value = 'ALL';
+      document.getElementById('filterTahun').value = 'ALL';
+      applyFilter();
+    }
+
     // Merender Data ke Dashboard
     function renderDashboard(data) {
-      let totalPemasukan = 0;
-      let totalPengeluaran = 0;
       const tbody = document.getElementById('transactionTableBody');
+      const transCount = document.getElementById('transCount');
       tbody.innerHTML = '';
 
+      transCount.innerText = `${data.length} Transaksi`;
+
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Belum ada transaksi.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada transaksi pada periode ini.</td></tr>';
+        document.getElementById('txtTotalSaldo').innerText = "Rp 0";
+        document.getElementById('txtTotalPemasukan').innerText = "Rp 0";
+        document.getElementById('txtTotalPengeluaran').innerText = "Rp 0";
+        initChart(0, 0);
         return;
       }
 
-      // Tampilkan 10 transaksi terakhir (dibalik urutannya)
-      const recentData = [...data].reverse().slice(0, 10);
+      // Urutkan transaksi dari yang terbaru
+      const sortedData = [...data].reverse();
 
-      recentData.forEach(row => {
+      let sumPemasukan = 0;
+      let sumPengeluaran = 0;
+
+      sortedData.forEach(row => {
         const masukan = parseFloat(row.pemasukan) || 0;
         const keluaran = parseFloat(row.pengeluaran) || 0;
+
+        sumPemasukan += masukan;
+        sumPengeluaran += keluaran;
 
         const isMasuk = row.jenis === "Pemasukan";
         const nominalStr = isMasuk 
@@ -349,22 +445,14 @@
         tbody.appendChild(tr);
       });
 
-      // Hitung total saldo dari seluruh baris data
-      let sumPemasukan = 0;
-      let sumPengeluaran = 0;
-      data.forEach(row => {
-        sumPemasukan += parseFloat(row.pemasukan) || 0;
-        sumPengeluaran += parseFloat(row.pengeluaran) || 0;
-      });
-
       const totalSaldo = sumPemasukan - sumPengeluaran;
 
-      // Update Angka Ringkasan
+      // Update Tampilan Angka Ringkasan
       document.getElementById('txtTotalSaldo').innerText = "Rp " + totalSaldo.toLocaleString('id-ID');
       document.getElementById('txtTotalPemasukan').innerText = "Rp " + sumPemasukan.toLocaleString('id-ID');
       document.getElementById('txtTotalPengeluaran').innerText = "Rp " + sumPengeluaran.toLocaleString('id-ID');
 
-      // Update Grafik
+      // Update Grafik Donut
       initChart(sumPemasukan, sumPengeluaran);
     }
 
@@ -398,7 +486,7 @@
           document.getElementById('financeForm').reset();
           document.getElementById('tanggal').valueAsDate = new Date();
           updateCategoryOptions();
-          loadData();
+          loadData(); // Memuat ulang data & menerapkan filter aktif
         } else {
           alertDiv.innerHTML = `<div class="alert alert-danger p-2 small text-center mb-0">Gagal: ${data.message}</div>`;
         }
@@ -414,3 +502,4 @@
   </script>
 </body>
 </html>
+   
