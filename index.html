@@ -225,6 +225,7 @@
                   <th>Kategori</th>
                   <th>Nominal</th>
                   <th>Keterangan</th>
+                  <th class="text-center">Aksi</th> <!-- Tambahan Kolom Aksi -->
                 </tr>
               </thead>
               <tbody id="transactionTableBody">
@@ -366,6 +367,62 @@
           }
         })
         .catch(err => console.error("Gagal mengambil data:", err));
+    }
+
+    // Contoh fungsi untuk render tabel transaksi
+    function renderTable(transactions) {
+      const tableBody = document.getElementById('transactionTableBody');
+      const transCount = document.getElementById('transCount');
+    
+      // Update badge total transaksi yang dimiliki
+      transCount.textContent = `${transactions.length} Transaksi`;
+    
+      if (transactions.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center text-muted py-3">Belum ada transaksi</td>
+          </tr>`;
+        return;
+      }
+    
+      // 1. Ambil HANYA 5 transaksi TERAKHIR (5 data teratas)
+      const recentTransactions = transactions.slice(0, 5);
+    
+      // 2. Render data ke dalam tabel HTML
+      tableBody.innerHTML = recentTransactions.map((trx, index) => {
+        return `
+          <tr>
+            <td>${trx.tanggal}</td>
+            <td>
+              <span class="badge ${trx.jenis === 'Pemasukan' ? 'bg-success' : 'bg-danger'}">
+                ${trx.jenis}
+              </span>
+            </td>
+            <td>${trx.kategori}</td>
+            <td class="fw-bold">Rp ${Number(trx.nominal).toLocaleString('id-ID')}</td>
+            <td>${trx.keterangan || '-'}</td>
+            <td class="text-center">
+              <!-- Tombol Hapus Logo Tempat Sampah -->
+              <button 
+                class="btn btn-sm btn-outline-danger border-0" 
+                onclick="hapusTransaksi(${trx.id || index})"
+                title="Hapus Transaksi">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    // Contoh Fungsi Hapus Transaksi
+    function hapusTransaksi(id) {
+      if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
+        // Tambahkan logika penghapusan data Anda di sini (misal: API request / update Array / localStorage)
+        console.log("Menghapus transaksi dengan ID:", id);
+        
+        // Panggil kembali renderTable() setelah data dihapus
+      }
     }
 
     // Memfilter Data berdasarkan Bulan dan Tahun yang Dipilih
