@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -61,7 +61,7 @@
 
   <div class="container mb-5">
     
-    <!-- 1. RINGKASAN KARTU STATISTIK -->
+    <!-- 1. KARTU RINGKASAN STATISTIK -->
     <div class="row g-3 mb-4">
       <!-- Total Saldo -->
       <div class="col-md-4">
@@ -124,15 +124,18 @@
 
             <div class="mb-3">
               <label class="form-label small fw-bold">Jenis Transaksi</label>
-              <select id="jenis" class="form-select" required>
+              <select id="jenis" class="form-select" onchange="updateCategoryOptions()" required>
                 <option value="Pengeluaran">Pengeluaran</option>
                 <option value="Pemasukan">Pemasukan</option>
               </select>
             </div>
 
+            <!-- Kategori Dinamis (Pilihan) -->
             <div class="mb-3">
               <label class="form-label small fw-bold">Kategori</label>
-              <input type="text" id="kategori" class="form-control" placeholder="Contoh: Makanan, Gaji, Transport" required>
+              <select id="kategori" class="form-select" required>
+                <!-- Opsi diisi otomatis via JS -->
+              </select>
             </div>
 
             <div class="mb-3">
@@ -203,16 +206,71 @@
     // Ganti dengan URL Deploy Web App Google Apps Script kamu
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwvsgPcUzeWmtD8CvukRfz8hLmIoCtdL5P4nv6IlKQNp79O414J0P2jcjva-lNfK_E/exec";
 
+    // Daftar Kategori berdasarkan Jenis
+    const categoriesList = {
+      Pengeluaran: [
+        "Logisitik Harian",
+        "Gaji Kasir",
+        "Indogrosir",
+        "Toko Erwin",
+        "Sosro",
+        "You C",
+        "Sari Roti",
+        "Snak Widia",
+        "Hidro Coco",
+        "Pocari Sweat",
+        "Larutan Kino",
+        "Coca Cola",
+        "Milki Way",
+        "Aqua Kemasan",
+        "Aqua Galon",
+        "Nestle Kemasan",
+        "Alice",
+        "Cimori",
+        "Nii Grentea",
+        "Snack Acmad",
+        "Snak Musri",
+        "wong Coco",
+        "Jelly 98",
+        "Jelly Andri",
+        "Transportasi",
+        "Sales Rokok",
+        "Lain-Lain"
+       
+      ],
+      Pemasukan: [
+        "Penjualan Harian",
+        "Kasbon Anggota",
+        "Pembayaran Harian",
+        "Penjualan",
+      ]
+    };
+
     let chartInstance = null;
 
-    // Set tanggal default ke hari ini
+    // Set tanggal default ke hari ini & muat opsi kategori
     document.getElementById('tanggal').valueAsDate = new Date();
 
-    // Jalankan pertama kali
     document.addEventListener("DOMContentLoaded", () => {
+      updateCategoryOptions();
       initChart();
       loadData();
     });
+
+    // Mengubah Opsi Dropdown Kategori secara Dinamis
+    function updateCategoryOptions() {
+      const jenisSelect = document.getElementById('jenis').value;
+      const kategoriSelect = document.getElementById('kategori');
+      kategoriSelect.innerHTML = '';
+
+      const options = categoriesList[jenisSelect] || [];
+      options.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.innerText = cat;
+        kategoriSelect.appendChild(opt);
+      });
+    }
 
     // Inisialisasi Grafik Donut
     function initChart(pemasukan = 0, pengeluaran = 0) {
@@ -273,9 +331,6 @@
         const masukan = parseFloat(row.pemasukan) || 0;
         const keluaran = parseFloat(row.pengeluaran) || 0;
 
-        totalPemasukan += parseFloat(row.pemasukan) || 0;
-        totalPengeluaran += parseFloat(row.pengeluaran) || 0;
-
         const isMasuk = row.jenis === "Pemasukan";
         const nominalStr = isMasuk 
           ? `<span class="text-success fw-bold">+Rp ${masukan.toLocaleString('id-ID')}</span>` 
@@ -294,7 +349,7 @@
         tbody.appendChild(tr);
       });
 
-      // Hitung total dari seluruh data
+      // Hitung total saldo dari seluruh baris data
       let sumPemasukan = 0;
       let sumPengeluaran = 0;
       data.forEach(row => {
@@ -304,7 +359,7 @@
 
       const totalSaldo = sumPemasukan - sumPengeluaran;
 
-      // Update Angka di Kartu Stat
+      // Update Angka Ringkasan
       document.getElementById('txtTotalSaldo').innerText = "Rp " + totalSaldo.toLocaleString('id-ID');
       document.getElementById('txtTotalPemasukan').innerText = "Rp " + sumPemasukan.toLocaleString('id-ID');
       document.getElementById('txtTotalPengeluaran').innerText = "Rp " + sumPengeluaran.toLocaleString('id-ID');
@@ -342,7 +397,8 @@
           alertDiv.innerHTML = '<div class="alert alert-success p-2 small text-center mb-0">Transaksi Berhasil Disimpan!</div>';
           document.getElementById('financeForm').reset();
           document.getElementById('tanggal').valueAsDate = new Date();
-          loadData(); // Reload data & grafik
+          updateCategoryOptions();
+          loadData();
         } else {
           alertDiv.innerHTML = `<div class="alert alert-danger p-2 small text-center mb-0">Gagal: ${data.message}</div>`;
         }
