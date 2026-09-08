@@ -198,6 +198,25 @@
         </div>
       </div>
 
+      <!-- KARTU SALDO AKUMULASI (Ukuran Besar & Jelas) -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm border-0 bg-primary text-white p-4 rounded-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span class="text-white-50 fw-semibold text-uppercase tracking-wider fs-6">
+                  <i class="fa-solid fa-wallet me-2"></i>Total Saldo Akumulasi
+                </span>
+                <h1 id="totalSaldo" class="display-4 fw-bold mb-0 mt-1">Rp 0</h1>
+              </div>
+              <div class="bg-white bg-opacity-25 p-3 rounded-circle d-none d-sm-block">
+                <i class="fa-solid fa-scale-balanced fa-2x text-white"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- 3. GRAFIK & TABEL RIWAYAT TRANSAKSI -->
       <div class="col-lg-8">
         
@@ -208,14 +227,14 @@
             <canvas id="financeChart"></canvas>
           </div>
         </div>
-
+      
         <!-- Tabel Transaksi Terakhir -->
         <div class="card table-card shadow-sm p-3 bg-white">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Riwayat Transaksi</h5>
+            <h5 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Riwayat Transaksi (5 Terakhir)</h5>
             <span id="transCount" class="badge bg-light text-dark border">0 Transaksi</span>
           </div>
-
+      
           <div class="table-responsive">
             <table class="table table-hover align-middle">
               <thead class="table-light">
@@ -225,23 +244,18 @@
                   <th>Kategori</th>
                   <th>Nominal</th>
                   <th>Keterangan</th>
-                  <th class="text-center">Aksi</th> <!-- Tambahan Kolom Aksi -->
+                  <th class="text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody id="transactionTableBody">
                 <tr>
-                  <td colspan="5" class="text-center text-muted py-3">Memuat data...</td>
+                  <td colspan="6" class="text-center text-muted py-3">Memuat data...</td>
                 </tr>
               </tbody>
             </table>
           </div>
-
         </div>
-
       </div>
-
-    </div>
-  </div>
 
   <!-- JavaScript Logika -->
   <script>
@@ -298,6 +312,82 @@
       initChart();
       loadData();
     });
+
+    // Fungsi untuk menghitung total saldo akumulasi dari seluruh data transaksi
+    function hitungSaldoAkumulasi(transactions) {
+      const totalSaldoElement = document.getElementById('totalSaldo');
+    
+      // Menghitung total akumulasi
+      const saldoTotal = transactions.reduce((total, trx) => {
+        const nominal = Number(trx.nominal) || 0;
+        // Jika jenis Pemasukan ditambahkan (+), jika Pengeluaran dikurangi (-)
+        if (trx.jenis === 'Pemasukan') {
+          return total + nominal;
+        } else if (trx.jenis === 'Pengeluaran') {
+          return total - nominal;
+        }
+        return total;
+      }, 0);
+    
+      // Tampilkan nominal saldo dengan format mata uang Indonesia (Rp)
+      totalSaldoElement.textContent = `Rp ${saldoTotal.toLocaleString('id-ID')}`;
+    }
+    
+    // Fungsi utama render tabel transaksi (Maksimal 5 data) & Saldo
+    function renderDashboard(transactions) {
+      const tableBody = document.getElementById('transactionTableBody');
+      const transCount = document.getElementById('transCount');
+    
+      // 1. Hitung dan update saldo akumulasi
+      hitungSaldoAkumulasi(transactions);
+    
+      // 2. Update badge total transaksi
+      transCount.textContent = `${transactions.length} Transaksi`;
+    
+      if (transactions.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center text-muted py-3">Belum ada transaksi</td>
+          </tr>`;
+        return;
+      }
+    
+      // 3. Ambil HANYA 5 transaksi TERAKHIR
+      const recentTransactions = transactions.slice(0, 5);
+    
+      // 4. Render 5 data terakhir ke tabel HTML
+      tableBody.innerHTML = recentTransactions.map((trx, index) => {
+        return `
+          <tr>
+            <td>${trx.tanggal}</td>
+            <td>
+              <span class="badge ${trx.jenis === 'Pemasukan' ? 'bg-success' : 'bg-danger'}">
+                ${trx.jenis}
+              </span>
+            </td>
+            <td>${trx.kategori}</td>
+            <td class="fw-bold">Rp ${Number(trx.nominal).toLocaleString('id-ID')}</td>
+            <td>${trx.keterangan || '-'}</td>
+            <td class="text-center">
+              <button 
+                class="btn btn-sm btn-outline-danger border-0" 
+                onclick="hapusTransaksi(${trx.id || index})"
+                title="Hapus Transaksi">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    // Contoh fungsi hapus transaksi
+    function hapusTransaksi(id) {
+      if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
+        console.log("Menghapus transaksi dengan ID:", id);
+        // Setelah data dihapus dari database/array, panggil renderDashboard(dataBaru) kembali
+      }
+    }
 
     // Menyiapkan Pilihan Tahun Dinamis (3 tahun ke belakang sampai 1 tahun ke depan)
     function setupYearOptions() {
@@ -369,51 +459,6 @@
         .catch(err => console.error("Gagal mengambil data:", err));
     }
 
-    // Contoh fungsi untuk render tabel transaksi
-    function renderTable(transactions) {
-      const tableBody = document.getElementById('transactionTableBody');
-      const transCount = document.getElementById('transCount');
-    
-      // Update badge total transaksi yang dimiliki
-      transCount.textContent = `${transactions.length} Transaksi`;
-    
-      if (transactions.length === 0) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="6" class="text-center text-muted py-3">Belum ada transaksi</td>
-          </tr>`;
-        return;
-      }
-    
-      // 1. Ambil HANYA 5 transaksi TERAKHIR (5 data teratas)
-      const recentTransactions = transactions.slice(0, 5);
-    
-      // 2. Render data ke dalam tabel HTML
-      tableBody.innerHTML = recentTransactions.map((trx, index) => {
-        return `
-          <tr>
-            <td>${trx.tanggal}</td>
-            <td>
-              <span class="badge ${trx.jenis === 'Pemasukan' ? 'bg-success' : 'bg-danger'}">
-                ${trx.jenis}
-              </span>
-            </td>
-            <td>${trx.kategori}</td>
-            <td class="fw-bold">Rp ${Number(trx.nominal).toLocaleString('id-ID')}</td>
-            <td>${trx.keterangan || '-'}</td>
-            <td class="text-center">
-              <!-- Tombol Hapus Logo Tempat Sampah -->
-              <button 
-                class="btn btn-sm btn-outline-danger border-0" 
-                onclick="hapusTransaksi(${trx.id || index})"
-                title="Hapus Transaksi">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
     
     // Contoh Fungsi Hapus Transaksi
     function hapusTransaksi(id) {
