@@ -237,12 +237,11 @@
                   <th>Kategori</th>
                   <th>Nominal</th>
                   <th>Keterangan</th>
-                  <th class="text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody id="transactionTableBody">
                 <tr>
-                  <td colspan="6" class="text-center text-muted py-3">Memuat data...</td>
+                  <td colspan="5" class="text-center text-muted py-3">Memuat data...</td>
                 </tr>
               </tbody>
             </table>
@@ -329,7 +328,7 @@
       transCount.innerText = `${data.length} Transaksi`;
 
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Tidak ada transaksi pada periode ini.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada transaksi pada periode ini.</td></tr>';
         document.getElementById('txtTotalSaldo').innerText = "Rp 0";
         document.getElementById('txtTotalPemasukan').innerText = "Rp 0";
         document.getElementById('txtTotalPengeluaran').innerText = "Rp 0";
@@ -373,7 +372,7 @@
       const recentData = sortedData.slice(0, 5);
 
       // Render ke Tabel
-      tbody.innerHTML = recentData.map((row, index) => {
+      tbody.innerHTML = recentData.map((row) => {
         let masuk = parseNumber(row.pemasukan !== undefined ? row.pemasukan : row.masuk);
         let keluar = parseNumber(row.pengeluaran !== undefined ? row.pengeluaran : row.keluar);
         
@@ -400,23 +399,9 @@
             <td><span class="badge bg-secondary badge-category">${row.kategori || '-'}</span></td>
             <td>${nominalStr}</td>
             <td class="text-muted small">${row.keterangan || '-'}</td>
-            <td class="text-center">
-              <button 
-                class="btn btn-sm btn-outline-danger border-0" 
-                onclick="hapusTransaksi('${row.id || index}')"
-                title="Hapus Transaksi">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </td>
           </tr>
         `;
       }).join('');
-    }
-
-    function hapusTransaksi(id) {
-      if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
-        console.log("Menghapus transaksi ID:", id);
-      }
     }
 
     function loadData() {
