@@ -316,23 +316,41 @@
       loadData();
     });
 
-    // Fungsi untuk menghitung total saldo akumulasi dari seluruh data transaksi
+    // Fungsi aman untuk menghitung total saldo akumulasi
     function hitungSaldoAkumulasi(transactions) {
       const totalSaldoElement = document.getElementById('totalSaldo');
     
-      // Menghitung total akumulasi
+      // Pastikan transactions adalah Array dan tidak kosong
+      if (!Array.isArray(transactions) || transactions.length === 0) {
+        totalSaldoElement.textContent = 'Rp 0';
+        return;
+      }
+    
+      // Hitung total saldo
       const saldoTotal = transactions.reduce((total, trx) => {
-        const nominal = Number(trx.nominal) || 0;
-        // Jika jenis Pemasukan ditambahkan (+), jika Pengeluaran dikurangi (-)
-        if (trx.jenis === 'Pemasukan') {
+        // 1. Ambil nilai nominal (Cek properti 'nominal' atau 'amount')
+        let rawNominal = trx.nominal !== undefined ? trx.nominal : trx.amount;
+        
+        // Ubah ke angka (hilangkan karakter selain angka jika data berupa string seperti "Rp 50.000")
+        if (typeof rawNominal === 'string') {
+          rawNominal = rawNominal.replace(/[^0-9.-]+/g, "");
+        }
+        const nominal = Number(rawNominal) || 0;
+    
+        // 2. Ambil jenis transaksi (Cek properti 'jenis' atau 'type')
+        const jenis = (trx.jenis || trx.type || '').toString().toLowerCase().trim();
+    
+        // 3. Tambahkan jika Pemasukan, kurangkan jika Pengeluaran
+        if (jenis === 'pemasukan' || jenis === 'income' || jenis === 'masuk') {
           return total + nominal;
-        } else if (trx.jenis === 'Pengeluaran') {
+        } else if (jenis === 'pengeluaran' || jenis === 'expense' || jenis === 'keluar') {
           return total - nominal;
         }
+    
         return total;
       }, 0);
     
-      // Tampilkan nominal saldo dengan format mata uang Indonesia (Rp)
+      // Tampilkan ke layar dengan format rupiah
       totalSaldoElement.textContent = `Rp ${saldoTotal.toLocaleString('id-ID')}`;
     }
     
