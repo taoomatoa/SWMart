@@ -120,11 +120,9 @@
         </div>
       </div>
     </div>
-    
-    
-    <!-- 1. KARTU RINGKASAN STATISTIK -->
+
+    <!-- 1. KARTU RINGKASAN STATISTIK PERIODE -->
     <div class="row g-3 mb-4">
-      <!-- Total Saldo -->
       <div class="col-md-4">
         <div class="card card-stat shadow-sm p-3 bg-white">
           <div class="d-flex align-items-center justify-content-between">
@@ -139,7 +137,6 @@
         </div>
       </div>
 
-      <!-- Total Pemasukan -->
       <div class="col-md-4">
         <div class="card card-stat shadow-sm p-3 bg-white">
           <div class="d-flex align-items-center justify-content-between">
@@ -154,7 +151,6 @@
         </div>
       </div>
 
-      <!-- Total Pengeluaran -->
       <div class="col-md-4">
         <div class="card card-stat shadow-sm p-3 bg-white">
           <div class="d-flex align-items-center justify-content-between">
@@ -191,12 +187,9 @@
               </select>
             </div>
 
-            <!-- Kategori Dinamis -->
             <div class="mb-3">
               <label class="form-label small fw-bold">Kategori</label>
-              <select id="kategori" class="form-select" required>
-                <!-- Opsi diisi via JS -->
-              </select>
+              <select id="kategori" class="form-select" required></select>
             </div>
 
             <div class="mb-3">
@@ -219,94 +212,67 @@
       </div>
 
       <!-- 3. GRAFIK & TABEL RIWAYAT TRANSAKSI -->
-    <div class="col-lg-8">
+      <div class="col-lg-8">
+        <!-- Grafik Visualisasi -->
+        <div class="card chart-card shadow-sm p-3 bg-white mb-4">
+          <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Ringkasan Grafik Periode</h5>
+          <div style="height: 220px;">
+            <canvas id="financeChart"></canvas>
+          </div>
+        </div>
       
-      <!-- Grafik Visualisasi -->
-      <div class="card chart-card shadow-sm p-3 bg-white mb-4">
-        <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Ringkasan Grafik Periode</h5>
-        <div style="height: 220px;">
-          <canvas id="financeChart"></canvas>
+        <!-- Tabel Transaksi Terakhir (Maksimal 5) -->
+        <div class="card table-card shadow-sm p-3 bg-white">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Riwayat Transaksi (5 Terakhir)</h5>
+            <span id="transCount" class="badge bg-light text-dark border">0 Transaksi</span>
+          </div>
+        
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Jenis</th>
+                  <th>Kategori</th>
+                  <th>Nominal</th>
+                  <th>Keterangan</th>
+                  <th class="text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="transactionTableBody">
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-3">Memuat data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    
-      <!-- Tabel Transaksi Terakhir -->
-      <div class="card table-card shadow-sm p-3 bg-white">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Riwayat Transaksi</h5>
-          <span id="transCount" class="badge bg-light text-dark border">0 Transaksi</span>
-        </div>
-    
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Tanggal</th>
-                <th>Jenis</th>
-                <th>Kategori</th>
-                <th>Nominal</th>
-                <th>Keterangan</th>
-              </tr>
-            </thead>
-            <tbody id="transactionTableBody">
-              <tr>
-                <td colspan="6" class="text-center text-muted py-3">Memuat data...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+
     </div>
-
-
-      
+  </div>
 
   <!-- JavaScript Logika -->
   <script>
-    // Ganti dengan URL Deploy Web App Google Apps Script kamu
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwvsgPcUzeWmtD8CvukRfz8hLmIoCtdL5P4nv6IlKQNp79O414J0P2jcjva-lNfK_E/exec";
 
-    // Global variable untuk menyimpan seluruh data mentah dari Sheets
     let allTransactions = [];
+    let chartInstance = null;
 
-    // Daftar Kategori berdasarkan Jenis
     const categoriesList = {
       Pengeluaran: [
-        "Logisitik Harian",
-        "Gaji Kasir",
-        "Indogrosir",
-        "Toko Erwin",
-        "Sosro",
-        "You C",
-        "Sari Roti",
-        "Snak Widia",
-        "Hidro Coco",
-        "Pocari Sweat",
-        "Larutan Kino",
-        "Coca Cola",
-        "Milki Way",
-        "Aqua Kemasan",
-        "Aqua Galon",
-        "Nestle Kemasan",
-        "Alice",
-        "Cimori",
-        "Nii Grentea",
-        "Snack Acmad",
-        "Snak Musri",
-        "wong Coco",
-        "Jelly 98",
-        "Jelly Andri",
-        "Transportasi",
-        "Sales Rokok",
-        "Lain-Lain"
+        "Logisitik Harian", "Gaji Kasir", "Indogrosir", "Toko Erwin", "Sosro", 
+        "You C", "Sari Roti", "Snak Widia", "Hidro Coco", "Pocari Sweat", 
+        "Larutan Kino", "Coca Cola", "Milki Way", "Aqua Kemasan", "Aqua Galon", 
+        "Nestle Kemasan", "Alice", "Cimori", "Nii Grentea", "Snack Acmad", 
+        "Snak Musri", "wong Coco", "Jelly 98", "Jelly Andri", "Transportasi", 
+        "Sales Rokok", "Lain-Lain"
       ],
       Pemasukan: [
-        "Penjualan Harian",
-        "Kasbon Anggota",
-        "Pembayaran Harian",
+        "Penjualan Harian", "Kasbon Anggota", "Pembayaran Harian"
       ]
     };
-
-    let chartInstance = null;
 
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('tanggal').valueAsDate = new Date();
@@ -316,83 +282,105 @@
       loadData();
     });
 
-    // Fungsi aman untuk menghitung total saldo akumulasi
+    // Menghitung Saldo Akumulasi Keseluruhan
     function hitungSaldoAkumulasi(transactions) {
       const totalSaldoElement = document.getElementById('totalSaldo');
-    
-      // Pastikan transactions adalah Array dan tidak kosong
+      
       if (!Array.isArray(transactions) || transactions.length === 0) {
         totalSaldoElement.textContent = 'Rp 0';
         return;
       }
-    
-      // Hitung total saldo
+
       const saldoTotal = transactions.reduce((total, trx) => {
-        // 1. Ambil nilai nominal (Cek properti 'nominal' atau 'amount')
         let rawNominal = trx.nominal !== undefined ? trx.nominal : trx.amount;
-        
-        // Ubah ke angka (hilangkan karakter selain angka jika data berupa string seperti "Rp 50.000")
         if (typeof rawNominal === 'string') {
           rawNominal = rawNominal.replace(/[^0-9.-]+/g, "");
         }
         const nominal = Number(rawNominal) || 0;
-    
-        // 2. Ambil jenis transaksi (Cek properti 'jenis' atau 'type')
         const jenis = (trx.jenis || trx.type || '').toString().toLowerCase().trim();
-    
-        // 3. Tambahkan jika Pemasukan, kurangkan jika Pengeluaran
+
         if (jenis === 'pemasukan' || jenis === 'income' || jenis === 'masuk') {
           return total + nominal;
         } else if (jenis === 'pengeluaran' || jenis === 'expense' || jenis === 'keluar') {
           return total - nominal;
         }
-    
         return total;
       }, 0);
-    
-      // Tampilkan ke layar dengan format rupiah
+
       totalSaldoElement.textContent = `Rp ${saldoTotal.toLocaleString('id-ID')}`;
     }
-    
-    // Fungsi utama render tabel transaksi (Maksimal 5 data) & Saldo
-    function renderDashboard(transactions) {
-      const tableBody = document.getElementById('transactionTableBody');
+
+    // Fungsi Render Dashboard Tunggal (Tabel 5 Terakhir & Statistik)
+    function renderDashboard(data) {
+      const tbody = document.getElementById('transactionTableBody');
       const transCount = document.getElementById('transCount');
-    
-      // 1. Hitung dan update saldo akumulasi
-      hitungSaldoAkumulasi(transactions);
-    
-      // 2. Update badge total transaksi
-      transCount.textContent = `${transactions.length} Transaksi`;
-    
-      if (transactions.length === 0) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="6" class="text-center text-muted py-3">Belum ada transaksi</td>
-          </tr>`;
+      
+      // Update Total Saldo Akumulasi Seluruh Data
+      hitungSaldoAkumulasi(allTransactions);
+
+      transCount.innerText = `${data.length} Transaksi`;
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Tidak ada transaksi pada periode ini.</td></tr>';
+        document.getElementById('txtTotalSaldo').innerText = "Rp 0";
+        document.getElementById('txtTotalPemasukan').innerText = "Rp 0";
+        document.getElementById('txtTotalPengeluaran').innerText = "Rp 0";
+        initChart(0, 0);
         return;
       }
-    
-      // 3. Ambil HANYA 5 transaksi TERAKHIR
-      const recentTransactions = transactions.slice(0, 5);
-    
-      // 4. Render 5 data terakhir ke tabel HTML
-      tableBody.innerHTML = recentTransactions.map((trx, index) => {
+
+      // Hitung Total Periode Ini
+      let sumPemasukan = 0;
+      let sumPengeluaran = 0;
+
+      data.forEach(row => {
+        let nominal = parseFloat(row.nominal) || 0;
+        const isMasuk = (row.jenis || '').toLowerCase().trim() === 'pemasukan';
+        
+        if (isMasuk) {
+          sumPemasukan += nominal;
+        } else {
+          sumPengeluaran += nominal;
+        }
+      });
+
+      const saldoPeriode = sumPemasukan - sumPengeluaran;
+
+      // Update Tampilan Ringkasan Periode
+      document.getElementById('txtTotalSaldo').innerText = "Rp " + saldoPeriode.toLocaleString('id-ID');
+      document.getElementById('txtTotalPemasukan').innerText = "Rp " + sumPemasukan.toLocaleString('id-ID');
+      document.getElementById('txtTotalPengeluaran').innerText = "Rp " + sumPengeluaran.toLocaleString('id-ID');
+
+      // Update Grafik Donut
+      initChart(sumPemasukan, sumPengeluaran);
+
+      // Urutkan transaksi dari yang terbaru
+      const sortedData = [...data].reverse();
+
+      // HANYA AMBIL 5 TRANSAKSI TERAKHIR
+      const recentData = sortedData.slice(0, 5);
+
+      // Render 5 Data ke Tabel
+      tbody.innerHTML = recentData.map((row, index) => {
+        const isMasuk = (row.jenis || '').toLowerCase().trim() === 'pemasukan';
+        const nominal = parseFloat(row.nominal) || 0;
+        const nominalStr = isMasuk 
+          ? `<span class="text-success fw-bold">+Rp ${nominal.toLocaleString('id-ID')}</span>` 
+          : `<span class="text-danger fw-bold">-Rp ${nominal.toLocaleString('id-ID')}</span>`;
+
+        const badgeClass = isMasuk ? "bg-success" : "bg-danger";
+
         return `
           <tr>
-            <td>${trx.tanggal}</td>
-            <td>
-              <span class="badge ${trx.jenis === 'Pemasukan' ? 'bg-success' : 'bg-danger'}">
-                ${trx.jenis}
-              </span>
-            </td>
-            <td>${trx.kategori}</td>
-            <td class="fw-bold">Rp ${Number(trx.nominal).toLocaleString('id-ID')}</td>
-            <td>${trx.keterangan || '-'}</td>
+            <td>${row.tanggal}</td>
+            <td><span class="badge ${badgeClass}">${row.jenis}</span></td>
+            <td><span class="badge bg-secondary badge-category">${row.kategori}</span></td>
+            <td>${nominalStr}</td>
+            <td class="text-muted small">${row.keterangan || '-'}</td>
             <td class="text-center">
               <button 
                 class="btn btn-sm btn-outline-danger border-0" 
-                onclick="hapusTransaksi(${trx.id || index})"
+                onclick="hapusTransaksi('${row.id || index}')"
                 title="Hapus Transaksi">
                 <i class="fa-solid fa-trash"></i>
               </button>
@@ -401,16 +389,55 @@
         `;
       }).join('');
     }
-    
-    // Contoh fungsi hapus transaksi
+
+    // Fungsi Hapus Transaksi (Siap Hubungkan ke Google Sheets)
     function hapusTransaksi(id) {
       if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
-        console.log("Menghapus transaksi dengan ID:", id);
-        // Setelah data dihapus dari database/array, panggil renderDashboard(dataBaru) kembali
+        console.log("Menghapus transaksi ID:", id);
+        // Tambahkan kirim fetch ke Google Apps Script (action=delete) jika backend Anda sudah mendukungnya.
       }
     }
 
-    // Menyiapkan Pilihan Tahun Dinamis (3 tahun ke belakang sampai 1 tahun ke depan)
+    // Mengambil Data dari Google Sheets
+    function loadData() {
+      fetch(SCRIPT_URL + "?action=read")
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            allTransactions = data.data;
+            applyFilter();
+          }
+        })
+        .catch(err => console.error("Gagal mengambil data:", err));
+    }
+
+    // Memfilter Data berdasarkan Bulan dan Tahun
+    function applyFilter() {
+      const selectedMonth = document.getElementById('filterBulan').value;
+      const selectedYear = document.getElementById('filterTahun').value;
+
+      const filtered = allTransactions.filter(item => {
+        if (!item.tanggal) return false;
+
+        const parts = item.tanggal.split('-');
+        const itemYear = parts[0];
+        const itemMonth = parts[1];
+
+        const matchMonth = (selectedMonth === 'ALL' || itemMonth === selectedMonth);
+        const matchYear = (selectedYear === 'ALL' || itemYear === selectedYear);
+
+        return matchMonth && matchYear;
+      });
+
+      renderDashboard(filtered);
+    }
+
+    function resetFilter() {
+      document.getElementById('filterBulan').value = 'ALL';
+      document.getElementById('filterTahun').value = 'ALL';
+      applyFilter();
+    }
+
     function setupYearOptions() {
       const yearSelect = document.getElementById('filterTahun');
       const currentYear = new Date().getFullYear();
@@ -424,7 +451,6 @@
       }
     }
 
-    // Mengubah Opsi Dropdown Kategori secara Dinamis
     function updateCategoryOptions() {
       const jenisSelect = document.getElementById('jenis').value;
       const kategoriSelect = document.getElementById('kategori');
@@ -439,7 +465,6 @@
       });
     }
 
-    // Inisialisasi Grafik Donut
     function initChart(pemasukan = 0, pengeluaran = 0) {
       const ctx = document.getElementById('financeChart').getContext('2d');
       
@@ -465,118 +490,6 @@
           }
         }
       });
-    }
-
-    // Mengambil Data dari Google Sheets
-    function loadData() {
-      fetch(SCRIPT_URL + "?action=read")
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === "success") {
-            allTransactions = data.data;
-            applyFilter(); // Tampilkan data awal (sesuai filter aktif)
-          }
-        })
-        .catch(err => console.error("Gagal mengambil data:", err));
-    }
-
-    
-    // Contoh Fungsi Hapus Transaksi
-    function hapusTransaksi(id) {
-      if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
-        // Tambahkan logika penghapusan data Anda di sini (misal: API request / update Array / localStorage)
-        console.log("Menghapus transaksi dengan ID:", id);
-        
-        // Panggil kembali renderTable() setelah data dihapus
-      }
-    }
-
-    // Memfilter Data berdasarkan Bulan dan Tahun yang Dipilih
-    function applyFilter() {
-      const selectedMonth = document.getElementById('filterBulan').value;
-      const selectedYear = document.getElementById('filterTahun').value;
-
-      const filtered = allTransactions.filter(item => {
-        if (!item.tanggal) return false;
-
-        // Tanggal dalam format YYYY-MM-DD
-        const parts = item.tanggal.split('-');
-        const itemYear = parts[0];
-        const itemMonth = parts[1];
-
-        const matchMonth = (selectedMonth === 'ALL' || itemMonth === selectedMonth);
-        const matchYear = (selectedYear === 'ALL' || itemYear === selectedYear);
-
-        return matchMonth && matchYear;
-      });
-
-      renderDashboard(filtered);
-    }
-
-    // Reset Filter ke "Semua Bulan & Tahun"
-    function resetFilter() {
-      document.getElementById('filterBulan').value = 'ALL';
-      document.getElementById('filterTahun').value = 'ALL';
-      applyFilter();
-    }
-
-    // Merender Data ke Dashboard
-    function renderDashboard(data) {
-      const tbody = document.getElementById('transactionTableBody');
-      const transCount = document.getElementById('transCount');
-      tbody.innerHTML = '';
-
-      transCount.innerText = `${data.length} Transaksi`;
-
-      if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada transaksi pada periode ini.</td></tr>';
-        document.getElementById('txtTotalSaldo').innerText = "Rp 0";
-        document.getElementById('txtTotalPemasukan').innerText = "Rp 0";
-        document.getElementById('txtTotalPengeluaran').innerText = "Rp 0";
-        initChart(0, 0);
-        return;
-      }
-
-      // Urutkan transaksi dari yang terbaru
-      const sortedData = [...data].reverse();
-
-      let sumPemasukan = 0;
-      let sumPengeluaran = 0;
-
-      sortedData.forEach(row => {
-        const masukan = parseFloat(row.pemasukan) || 0;
-        const keluaran = parseFloat(row.pengeluaran) || 0;
-
-        sumPemasukan += masukan;
-        sumPengeluaran += keluaran;
-
-        const isMasuk = row.jenis === "Pemasukan";
-        const nominalStr = isMasuk 
-          ? `<span class="text-success fw-bold">+Rp ${masukan.toLocaleString('id-ID')}</span>` 
-          : `<span class="text-danger fw-bold">-Rp ${keluaran.toLocaleString('id-ID')}</span>`;
-
-        const badgeClass = isMasuk ? "bg-success" : "bg-danger";
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${row.tanggal}</td>
-          <td><span class="badge ${badgeClass}">${row.jenis}</span></td>
-          <td><span class="badge bg-secondary badge-category">${row.kategori}</span></td>
-          <td>${nominalStr}</td>
-          <td class="text-muted small">${row.keterangan || '-'}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      const totalSaldo = sumPemasukan - sumPengeluaran;
-
-      // Update Tampilan Angka Ringkasan 
-      document.getElementById('txtTotalSaldo').innerText = "Rp " + totalSaldo.toLocaleString('id-ID');
-      document.getElementById('txtTotalPemasukan').innerText = "Rp " + sumPemasukan.toLocaleString('id-ID');
-      document.getElementById('txtTotalPengeluaran').innerText = "Rp " + sumPengeluaran.toLocaleString('id-ID');
-
-      // Update Grafik Donut
-      initChart(sumPemasukan, sumPengeluaran);
     }
 
     // Submit Form Transaksi
@@ -609,7 +522,7 @@
           document.getElementById('financeForm').reset();
           document.getElementById('tanggal').valueAsDate = new Date();
           updateCategoryOptions();
-          loadData(); // Memuat ulang data & menerapkan filter aktif
+          loadData();
         } else {
           alertDiv.innerHTML = `<div class="alert alert-danger p-2 small text-center mb-0">Gagal: ${data.message}</div>`;
         }
@@ -625,4 +538,3 @@
   </script>
 </body>
 </html>
-   
