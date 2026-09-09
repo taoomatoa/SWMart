@@ -93,7 +93,7 @@
         </div>
         <div class="col-md-3 d-flex gap-2">
           <button class="btn btn-sm btn-outline-primary w-100" onclick="resetFilter()">
-            <i class="fa-solid fa-rotate-left me-1"></i> Reset / Semua
+            <i class="fa-solid fa-rotate-left me-1"></i> Semua Data
           </button>
           <button class="btn btn-sm btn-outline-secondary" onclick="loadData()" title="Segarkan Data">
             <i class="fa-solid fa-rotate-right"></i>
@@ -276,10 +276,21 @@
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('tanggal').valueAsDate = new Date();
       setupYearOptions();
+      setDefaultCurrentPeriod(); // Set otomatis bulan & tahun saat ini
       updateCategoryOptions();
       initChart();
       loadData();
     });
+
+    // Mengatur dropdown filter agar otomatis memilih bulan & tahun saat ini
+    function setDefaultCurrentPeriod() {
+      const now = new Date();
+      const currentMonth = String(now.getMonth() + 1).padStart(2, '0'); // Format '01' - '12'
+      const currentYear = String(now.getFullYear());
+
+      document.getElementById('filterBulan').value = currentMonth;
+      document.getElementById('filterTahun').value = currentYear;
+    }
 
     // Helper untuk membersihkan nilai angka dari Google Sheets
     function parseNumber(val) {
@@ -289,7 +300,7 @@
       return parseFloat(strVal) || 0;
     }
 
-    // Menghitung Saldo Akumulasi Keseluruhan (Membaca Kolom D & E)
+    // Menghitung Saldo Akumulasi Keseluruhan
     function hitungSaldoAkumulasi(transactions) {
       const totalSaldoElement = document.getElementById('totalSaldo');
       
@@ -299,11 +310,9 @@
       }
 
       const saldoTotal = transactions.reduce((total, trx) => {
-        // Kolom D = Pemasukan, Kolom E = Pengeluaran
         const masuk = parseNumber(trx.pemasukan !== undefined ? trx.pemasukan : trx.masuk);
         const keluar = parseNumber(trx.pengeluaran !== undefined ? trx.pengeluaran : trx.keluar);
 
-        // Jika data dikirim berupa `nominal` & `jenis`
         if (masuk === 0 && keluar === 0 && trx.nominal !== undefined) {
           const nominal = parseNumber(trx.nominal);
           const jenis = (trx.jenis || '').toString().toLowerCase().trim();
@@ -343,7 +352,6 @@
         let masuk = parseNumber(row.pemasukan !== undefined ? row.pemasukan : row.masuk);
         let keluar = parseNumber(row.pengeluaran !== undefined ? row.pengeluaran : row.keluar);
 
-        // Fallback jika Google Sheets mengembalikan gabungan nominal & jenis
         if (masuk === 0 && keluar === 0 && row.nominal !== undefined) {
           const nominal = parseNumber(row.nominal);
           const jenis = (row.jenis || '').toLowerCase().trim();
