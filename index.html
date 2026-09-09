@@ -282,7 +282,15 @@
       loadData();
     });
 
-    // Menghitung Saldo Akumulasi Keseluruhan
+    // Helper untuk membersihkan nilai angka dari Google Sheets
+    function parseNumber(val) {
+      if (val === undefined || val === null || val === '') return 0;
+      if (typeof val === 'number') return val;
+      const strVal = val.toString().replace(/[^0-9.-]+/g, "");
+      return parseFloat(strVal) || 0;
+    }
+
+    // Menghitung Saldo Akumulasi Keseluruhan (Membaca Kolom D & E)
     function hitungSaldoAkumulasi(transactions) {
       const totalSaldoElement = document.getElementById('totalSaldo');
       
@@ -292,30 +300,30 @@
       }
 
       const saldoTotal = transactions.reduce((total, trx) => {
-        let rawNominal = trx.nominal !== undefined ? trx.nominal : trx.amount;
-        if (typeof rawNominal === 'string') {
-          rawNominal = rawNominal.replace(/[^0-9.-]+/g, "");
-        }
-        const nominal = Number(rawNominal) || 0;
-        const jenis = (trx.jenis || trx.type || '').toString().toLowerCase().trim();
+        // Kolom D = Pemasukan, Kolom E = Pengeluaran
+        const masuk = parseNumber(trx.pemasukan !== undefined ? trx.pemasukan : trx.masuk);
+        const keluar = parseNumber(trx.pengeluaran !== undefined ? trx.pengeluaran : trx.keluar);
 
-        if (jenis === 'pemasukan' || jenis === 'income' || jenis === 'masuk') {
-          return total + nominal;
-        } else if (jenis === 'pengeluaran' || jenis === 'expense' || jenis === 'keluar') {
-          return total - nominal;
+        // Jika data dikirim berupa `nominal` & `jenis`
+        if (masuk === 0 && keluar === 0 && trx.nominal !== undefined) {
+          const nominal = parseNumber(trx.nominal);
+          const jenis = (trx.jenis || '').toString().toLowerCase().trim();
+          if (jenis === 'pemasukan') return total + nominal;
+          if (jenis === 'pengeluaran') return total - nominal;
         }
-        return total;
+
+        return total + masuk - keluar;
       }, 0);
 
       totalSaldoElement.textContent = `Rp ${saldoTotal.toLocaleString('id-ID')}`;
     }
 
-    // Fungsi Render Dashboard Tunggal (Tabel 5 Terakhir & Statistik)
+    // Render Dashboard (Tabel 5 Terakhir & Statistik Periode)
     function renderDashboard(data) {
       const tbody = document.getElementById('transactionTableBody');
       const transCount = document.getElementById('transCount');
       
-      // Update Total Saldo Akumulasi Seluruh Data
+      // Update Saldo Akumulasi Seluruh Data
       hitungSaldoAkumulasi(allTransactions);
 
       transCount.innerText = `${data.length} Transaksi`;
@@ -329,52 +337,67 @@
         return;
       }
 
-      // Hitung Total Periode Ini
       let sumPemasukan = 0;
       let sumPengeluaran = 0;
 
       data.forEach(row => {
-        let nominal = parseFloat(row.nominal) || 0;
-        const isMasuk = (row.jenis || '').toLowerCase().trim() === 'pemasukan';
-        
-        if (isMasuk) {
-          sumPemasukan += nominal;
-        } else {
-          sumPengeluaran += nominal;
+        let masuk = parseNumber(row.pemasukan !== undefined ? row.pemasukan : row.masuk);
+        let keluar = parseNumber(row.pengeluaran !== undefined ? row.pengeluaran : row.keluar);
+
+        // Fallback jika Google Sheets mengembalikan gabungan nominal & jenis
+        if (masuk === 0 && keluar === 0 && row.nominal !== undefined) {
+          const nominal = parseNumber(row.nominal);
+          const jenis = (row.jenis || '').toLowerCase().trim();
+          if (jenis === 'pemasukan') masuk = nominal;
+          else if (jenis === 'pengeluaran') keluar = nominal;
         }
+
+        sumPemasukan += masuk;
+        sumPengeluaran += keluar;
       });
 
       const saldoPeriode = sumPemasukan - sumPengeluaran;
 
-      // Update Tampilan Ringkasan Periode
+      // Update Statistik Tampilan Periode
       document.getElementById('txtTotalSaldo').innerText = "Rp " + saldoPeriode.toLocaleString('id-ID');
       document.getElementById('txtTotalPemasukan').innerText = "Rp " + sumPemasukan.toLocaleString('id-ID');
       document.getElementById('txtTotalPengeluaran').innerText = "Rp " + sumPengeluaran.toLocaleString('id-ID');
 
-      // Update Grafik Donut
+      // Update Grafik
       initChart(sumPemasukan, sumPengeluaran);
 
-      // Urutkan transaksi dari yang terbaru
+      // Urutkan transaksi terbaru
       const sortedData = [...data].reverse();
 
-      // HANYA AMBIL 5 TRANSAKSI TERAKHIR
+      // BATASI HANYA 5 TRANSAKSI TERAKHIR
       const recentData = sortedData.slice(0, 5);
 
-      // Render 5 Data ke Tabel
+      // Render ke Tabel
       tbody.innerHTML = recentData.map((row, index) => {
-        const isMasuk = (row.jenis || '').toLowerCase().trim() === 'pemasukan';
-        const nominal = parseFloat(row.nominal) || 0;
-        const nominalStr = isMasuk 
-          ? `<span class="text-success fw-bold">+Rp ${nominal.toLocaleString('id-ID')}</span>` 
-          : `<span class="text-danger fw-bold">-Rp ${nominal.toLocaleString('id-ID')}</span>`;
+        let masuk = parseNumber(row.pemasukan !== undefined ? row.pemasukan : row.masuk);
+        let keluar = parseNumber(row.pengeluaran !== undefined ? row.pengeluaran : row.keluar);
+        
+        let jenisStr = row.jenis;
+        let nominalStr = "";
+        let badgeClass = "bg-secondary";
 
-        const badgeClass = isMasuk ? "bg-success" : "bg-danger";
+        if (masuk > 0 || (row.jenis || '').toLowerCase() === 'pemasukan') {
+          jenisStr = "Pemasukan";
+          const val = masuk > 0 ? masuk : parseNumber(row.nominal);
+          nominalStr = `<span class="text-success fw-bold">+Rp ${val.toLocaleString('id-ID')}</span>`;
+          badgeClass = "bg-success";
+        } else {
+          jenisStr = "Pengeluaran";
+          const val = keluar > 0 ? keluar : parseNumber(row.nominal);
+          nominalStr = `<span class="text-danger fw-bold">-Rp ${val.toLocaleString('id-ID')}</span>`;
+          badgeClass = "bg-danger";
+        }
 
         return `
           <tr>
-            <td>${row.tanggal}</td>
-            <td><span class="badge ${badgeClass}">${row.jenis}</span></td>
-            <td><span class="badge bg-secondary badge-category">${row.kategori}</span></td>
+            <td>${row.tanggal || '-'}</td>
+            <td><span class="badge ${badgeClass}">${jenisStr}</span></td>
+            <td><span class="badge bg-secondary badge-category">${row.kategori || '-'}</span></td>
             <td>${nominalStr}</td>
             <td class="text-muted small">${row.keterangan || '-'}</td>
             <td class="text-center">
@@ -390,15 +413,12 @@
       }).join('');
     }
 
-    // Fungsi Hapus Transaksi (Siap Hubungkan ke Google Sheets)
     function hapusTransaksi(id) {
       if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
         console.log("Menghapus transaksi ID:", id);
-        // Tambahkan kirim fetch ke Google Apps Script (action=delete) jika backend Anda sudah mendukungnya.
       }
     }
 
-    // Mengambil Data dari Google Sheets
     function loadData() {
       fetch(SCRIPT_URL + "?action=read")
         .then(res => res.json())
@@ -411,7 +431,6 @@
         .catch(err => console.error("Gagal mengambil data:", err));
     }
 
-    // Memfilter Data berdasarkan Bulan dan Tahun
     function applyFilter() {
       const selectedMonth = document.getElementById('filterBulan').value;
       const selectedYear = document.getElementById('filterTahun').value;
@@ -492,7 +511,7 @@
       });
     }
 
-    // Submit Form Transaksi
+    // Submit Form
     document.getElementById('financeForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
